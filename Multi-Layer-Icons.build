@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!--Set product properties and paths-->
+  
+  <PropertyGroup>    
+    <ProductName>Multi-Layer-Icons</ProductName>
+    <ProductCompany>github.com/trondr</ProductCompany>
+    <ProductDescription>Scalable Vector Graphics (*.svg) icon resources converted to multi level binary icons (*.ico). Icon resources are collected from various open source projects.</ProductDescription>
+    <ProductCopyright>Copyright &#169; github.com/trondr $([System.DateTime]::Now.Year)</ProductCopyright>
+    <ProductProjectName>$(ProductName)</ProductProjectName>
+
+    <ShortYear>$([System.DateTime]::Now.ToString(`yy`))</ShortYear>
+    <DayOfYear>$([System.DateTime]::Now.DayOfYear.ToString(`000`))</DayOfYear>
+    <Major>1</Major>
+    <Minor>0</Minor>
+    <Build>$(ShortYear)$(DayOfYear)</Build>
+    <Revision>0</Revision>
+
+    <BinDirectory>$(MSBuildProjectDirectory)\bin</BinDirectory>
+    <SrcDirectory>$(MSBuildProjectDirectory)\src</SrcDirectory>
+    <ToolsDirectory>$(MSBuildProjectDirectory)\tools</ToolsDirectory>
+    
+  </PropertyGroup>
+
+  <!--
+		Include MSBuild Community Tasks.
+	-->
+  <Choose>
+    <When Condition="Exists('$(ToolsDirectory)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets')">
+      <PropertyGroup>
+        <MSBuildCommunityTasksAvailable>true</MSBuildCommunityTasksAvailable>
+		<MSBuildCommunityTasksPath>$(ToolsDirectory)\MSBuildCommunityTasks</MSBuildCommunityTasksPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <MSBuildCommunityTasksAvailable>false</MSBuildCommunityTasksAvailable>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(ToolsDirectory)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets" Condition=" '$(MSBuildCommunityTasksAvailable)' == 'true' "/>
+
+    <!--
+		Include MSBuild Custom Tasks.
+	-->
+  <Choose>
+    <When Condition="Exists('$(ToolsDirectory)\MSBuildCustomTasks\MSBuildCustomTasks.Targets')">
+      <PropertyGroup>
+        <MSBuildCustomTasksAvailable>true</MSBuildCustomTasksAvailable>
+		<MSBuildCustomTasksPath>$(ToolsDirectory)\MSBuildCustomTasks</MSBuildCustomTasksPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <MSBuildCustomTasksAvailable>false</MSBuildCustomTasksAvailable>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(ToolsDirectory)\MSBuildCustomTasks\MSBuildCustomTasks.Targets" Condition=" '$(MSBuildCustomTasksAvailable)' == 'true' "/>
+  
+  <!-- Verify if current solution is in a .git repository-->
+
+  <Choose>
+    <When Condition="Exists('$(MSBuildProjectDirectory)\.git')">
+      <PropertyGroup>
+        <IsGitRepository>true</IsGitRepository>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <IsGitRepository>false</IsGitRepository>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <DefaultExclude Include="$(MSBuildProjectDirectory)\**\*.png" />
+    <DefaultExclude Include="$(MSBuildProjectDirectory)\**\*.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SourceFiles Include="$(SrcDirectory)\**\*.svg" Exclude="@(DefaultExclude)" />		
+  </ItemGroup>
+  
+  <Target Name="GitHashInit">
+    <CreateProperty Value="unknown">
+      <Output TaskParameter="Value" PropertyName="RevisionHash" />
+    </CreateProperty>
+	<Message Text="Initial RevisionHash=$(RevisionHash)" Importance="normal" />
+  </Target>
+  
+  <Target Name="GitHash" Condition=" '$(IsGitRepository)' == 'true' " DependsOnTargets="GitHashInit">
+    <GitVersion LocalPath="$(MSBuildProjectDirectory)" Timeout="5000">
+      <Output TaskParameter="CommitHash" PropertyName="RevisionHash" />
+    </GitVersion>
+	<Message Text="Calculated RevisionHash=$(RevisionHash)" Importance="normal" />
+  </Target>
+
+  <Target Name="UpdateRevisionVersion">
+    <XmlRead XPath="/version/property[@name='revision']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Revision" />
+    </XmlRead>
+    <Math.Add Numbers="$(Revision);1">
+      <Output TaskParameter="Result" PropertyName="Revision" />
+    </Math.Add>
+    <XmlUpdate XPath="/version/property[@name='revision']/@value" XmlFileName="version.xml" Value="$(Revision)"/>
+  </Target>
+
+  <Target Name="UpdateBuildVersion">
+    <XmlRead XPath="/version/property[@name='build']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Build" />
+    </XmlRead>
+    <Math.Add Numbers="0;$(ShortYear)$(DayOfYear)">
+      <Output TaskParameter="Result" PropertyName="Build" />
+    </Math.Add>
+    <XmlUpdate XPath="/version/property[@name='build']/@value" XmlFileName="version.xml" Value="$(Build)"/>
+  </Target>
+  
+  <Target Name="UpdateVersion" DependsOnTargets="GitHash;UpdateRevisionVersion;UpdateBuildVersion">
+    <XmlRead XPath="/version/property[@name='major']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Major" />
+    </XmlRead>
+    <XmlRead XPath="/version/property[@name='minor']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Minor" />
+    </XmlRead>
+    <CreateProperty Value="$(Major).$(Minor).$(Build).$(Revision)">
+      <Output TaskParameter="Value" PropertyName="AssemblyVersion" />
+    </CreateProperty>
+    <Message Text="AssemblyVersion: $(AssemblyVersion)"/>
+  </Target>
+
+  <Target Name="Version" DependsOnTargets="GitHash">
+    <XmlRead XPath="/version/property[@name='major']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Major" />
+    </XmlRead>
+    <XmlRead XPath="/version/property[@name='minor']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Minor" />
+    </XmlRead>
+    <XmlRead XPath="/version/property[@name='build']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Build" />
+    </XmlRead>
+    <XmlRead XPath="/version/property[@name='revision']/@value" XmlFileName="version.xml">
+      <Output TaskParameter="Value" PropertyName="Revision" />
+    </XmlRead>
+    <CreateProperty Value="$(Major).$(Minor).$(Build).$(Revision)">
+      <Output TaskParameter="Value" PropertyName="AssemblyVersion" />
+    </CreateProperty>
+    <CreateProperty Value="$(Major)_$(Minor)_$(Build)_$(Revision)">
+      <Output TaskParameter="Value" PropertyName="AssemblyVersionU" />
+    </CreateProperty>
+  </Target>
+  
+  <Target Name="CopySourceToRelease">
+	  <Copy
+            SourceFiles="@(SourceFiles)"
+            DestinationFiles="@(SourceFiles->'$(BinDirectory)\Release\$(ProductName)\%(RecursiveDir)%(Filename)%(Extension)')"
+			SkipUnchangedFiles="True"
+        />
+  </Target>
+  
+  <!--Compile-->
+  <Target Name="Compile" DependsOnTargets="Version;CopySourceToRelease">
+	<Exec Command="&quot;$(ToolsDirectory)\NMultiTool\NMultiTool.exe&quot; ConvertAllSvgToIco /folder=&quot;$(BinDirectory)\Release\$(ProductName)&quot; /recursive=&quot;True&quot; /refresh=&quot;False&quot; /sizes=&quot;[16;22;24;32;48;64;128;256]&quot; /maxDegreeOfParallelism=&quot;4&quot;" />
+  </Target>
+
+  <ItemGroup>
+    <ReleaseFiles Include="$(BinDirectory)\Release\$(ProductName)\**\*.svg" />
+    <ReleaseFiles Include="$(BinDirectory)\Release\$(ProductName)\**\*.png" />
+    <ReleaseFiles Include="$(BinDirectory)\Release\$(ProductName)\**\*.ico" />    
+  </ItemGroup>
+  
+  <Target Name="Deploy" DependsOnTargets="Compile">
+    
+    <Zip Files="@(ReleaseFiles)"
+         WorkingDirectory="$(BinDirectory)\Release\$(ProductName)"
+         ZipFileName="$(BinDirectory)\Release\$(ProductName).$(AssemblyVersion).zip"
+         ZipLevel="9"
+         />
+    <Message Text="$(ProductName).$(AssemblyVersion) relase zip complete" Importance="normal" />
+
+    <Zip Files="@(SourceFiles)"
+         WorkingDirectory="$(MSBuildProjectDirectory)"
+         ZipFileName="$(BinDirectory)\Release\$(ProductName).Source.$(AssemblyVersion).zip"
+         ZipLevel="9"
+         />
+    <Message Text="$(ProductName).Source.$(AssemblyVersion) zip complete" Importance="normal" />    
+	 
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="Compile">
+    <Message Text="$(ProductProjectName).$(AssemblyVersion) build complete" Importance="normal" />
+  </Target>
+</Project>
