@@ -41,3 +41,5 @@ _ReSharper*/
 Doc\Help
 .metadata/*
 */tools/NMultiTool/(null)
+.idea/
+.vs/
