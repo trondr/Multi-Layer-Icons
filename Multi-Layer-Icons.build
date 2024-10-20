@@ -18,7 +18,7 @@
     <Revision>0</Revision>
 
     <BinDirectory>$(MSBuildProjectDirectory)\bin</BinDirectory>
-    <SrcDirectory>$(MSBuildProjectDirectory)\src</SrcDirectory>
+    <SrcDirectory>$(MSBuildProjectDirectory)\iconsrc</SrcDirectory>
     <ToolsDirectory>$(MSBuildProjectDirectory)\tools</ToolsDirectory>
     
   </PropertyGroup>
