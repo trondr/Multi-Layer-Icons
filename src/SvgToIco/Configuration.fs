@@ -8,6 +8,7 @@ module Configuration=
     type SvgToIcoConfiguration = {        
         LogFile:string
         LogLevel:string
+        InkscapeExe:string
     }
     
     let getConfiguration () =
@@ -23,7 +24,9 @@ module Configuration=
         
         // Bind the section to a strongly-typed object
         let configuration = mySettingsSection.Get<SvgToIcoConfiguration>()
-        let expandandedConfiguration = { configuration with                                            
-                                            LogFile =  System.Environment.ExpandEnvironmentVariables(configuration.LogFile) }
+        let expandandedConfiguration = { configuration with
+                                            LogFile =  System.Environment.ExpandEnvironmentVariables(configuration.LogFile)
+                                            InkscapeExe =  System.Environment.ExpandEnvironmentVariables(configuration.InkscapeExe)
+                                       }
         expandandedConfiguration
 
