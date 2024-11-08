@@ -12,13 +12,18 @@
         <Compile Include="Configuration.fs" />
         <Compile Include="F.fs" />
         <Compile Include="Logging.fs" />
+        <Compile Include="SvgToIco.fs" />
+        <Compile Include="Commands.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
+      <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+      <PackageReference Include="NCmdLiner" Version="3.0.20081" />
       <PackageReference Include="Serilog" Version="4.0.2" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
       <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />

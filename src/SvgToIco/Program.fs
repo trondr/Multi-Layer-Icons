@@ -2,6 +2,7 @@
 open System.Diagnostics
 open System.Reflection
 open Serilog
+open SvgToIco.Commands
 open SvgToIco.Logging
 
 let getAppName () =
@@ -35,7 +36,9 @@ let main argv =
     let stopWatch = Stopwatch.StartNew()
     logger.Information $"START: %s{getAppName()} %s{getAppVersion()}"
     logger.Warning "TODO: Implement SvgToIco"
+    let result = NCmdLiner.CmdLinery.Run(typeof<CommandDefinitions>,argv) |> Async.AwaitTask |> Async.RunSynchronously
+    let exitCode = result.Match((fun i ->i),(fun ex -> logger.Error(ex.Message);1))
     stopWatch.Stop()
-    logger.Information $"END: %s{getAppName()} %s{getAppVersion()} Elapsed time: %s{stopWatch.Elapsed.ToString()} "
+    logger.Information $"END: %s{getAppName()} %s{getAppVersion()} Elapsed time: %s{stopWatch.Elapsed.ToString()}. Exit code: {exitCode}."
     teardown()
-    0 // return an integer exit code
+    exitCode // return an integer exit code
