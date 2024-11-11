@@ -123,14 +123,14 @@ module SvgToIcoConversion =
             |> Seq.map(fun i ->
                        let result =
                            i.PngFiles
-                           |> Array.map(fun p -> exportSvgToPng i.SvgFile p)
+                           |> Array.Parallel.map(fun p -> exportSvgToPng i.SvgFile p)
                            |> Array.map (fun r -> (F.resultToOption Log.Logger r))
                        let allGood = result |> Array.exists (fun o -> not (match o with|Some s->false|None->true))
                        if allGood then Some i else None
                        )
             |>Seq.choose id
-            |>Seq.map(fun i ->
+            |>Seq.toArray
+            |>Array.Parallel.map(fun i ->
                     createIconFromPngFilesFromSvg i
                 )
-            |>Seq.toList
         Result.Ok 0
