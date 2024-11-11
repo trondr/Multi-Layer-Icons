@@ -79,17 +79,24 @@ module SvgToIcoConversion =
         }
 
     let pngNeedUpdate (svgFile:IconFileInfo) (pngFile:PngFileInfo) =
-        match (fileExist pngFile.FullName) with
-        | false -> true
-        | true -> (pngFile.ModifiedTime < svgFile.ModifiedTime)
+        let needUpdate =
+            match (fileExist pngFile.FullName) with
+            | false -> true
+            | true -> (pngFile.ModifiedTime < svgFile.ModifiedTime)
+        Log.Logger.Information $"Icon '%s{pngFile.FullName}' need update: %b{needUpdate}"
+        needUpdate
         
     let icoNeedUpdate (iconInfo:IconInfo) =
-        match (fileExist iconInfo.IconFile.FullName) with
-        | false -> true
-        | true ->
-            match (iconInfo.IconFile.ModifiedTime < iconInfo.SvgFile.ModifiedTime) with
-            |true -> true
-            |false -> iconInfo.PngFiles |> Array.exists (fun p -> pngNeedUpdate iconInfo.SvgFile p)
+        let needUpdate =
+            match (fileExist iconInfo.IconFile.FullName) with
+            | false -> true
+            | true ->
+                match (iconInfo.IconFile.ModifiedTime < iconInfo.SvgFile.ModifiedTime) with
+                |true -> true
+                |false -> 
+                    iconInfo.PngFiles |> Array.exists (fun p -> pngNeedUpdate iconInfo.SvgFile p)
+        Log.Logger.Information $"Icon '%s{iconInfo.IconFile.FullName}' need update: %b{needUpdate}"
+        needUpdate
         
     let exportSvgToPng (svgFile: IconFileInfo) (pngFile: PngFileInfo) =
         Log.Logger.Information $"Exporting: %s{svgFile.Name} -> %s{pngFile.Name}"
@@ -105,6 +112,7 @@ module SvgToIcoConversion =
         |Error ex -> Result.Error(new Exception($"Failed to export svg to png file. %s{ex.Message}"))
        
     let createIconFromPngFilesFromSvg (iconInfo: IconInfo) =        
+        Log.Logger.Information $"Creating icon from png files: %s{iconInfo.SvgFile.FullName} -> %s{iconInfo.IconFile.FullName}"
         use imageCollection = new MagickImageCollection()
         iconInfo.PngFiles
         |> Array.iter (fun iconInfoPngFile ->
@@ -123,9 +131,11 @@ module SvgToIcoConversion =
             |> Seq.map(fun i ->
                        let result =
                            i.PngFiles
+                           |> Array.filter (fun p -> pngNeedUpdate i.SvgFile p)
                            |> Array.Parallel.map(fun p -> exportSvgToPng i.SvgFile p)
                            |> Array.map (fun r -> (F.resultToOption Log.Logger r))
-                       let allGood = result |> Array.exists (fun o -> not (match o with|Some s->false|None->true))
+                       let allGood = (result|>Array.length = 0) || (result |> Array.exists (fun o -> not (match o with|Some s->false|None->true)))
+                       Log.Logger.Information $"Png files for '%s{i.IconFile.FullName}' is all good: %b{allGood}"
                        if allGood then Some i else None
                        )
             |>Seq.choose id

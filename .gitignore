@@ -44,3 +44,4 @@ Doc\Help
 .idea/
 .vs/
 build/
+src/SvgToIco/Properties/launchSettings.json
