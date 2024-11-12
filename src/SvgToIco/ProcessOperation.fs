@@ -107,7 +107,9 @@ module ProcessOperations =
             }
         
         writeProcessExitDataToLog processExitData logFileName appendToLogFile            
-        logger.Information(sprintf "Exit: ")
+        logger.Information($"%s{processExitData.StdOutput}")
+        logger.Information($"%s{processExitData.StdError}")
+        logger.Information($"Exit Code: %i{processExitData.ExitCode}")
         processExitData.ExitCode
     
     let startConsoleProcess filePath arguments workingDirectory ( timeout:int) inputData logFileName appendToLogFile =
